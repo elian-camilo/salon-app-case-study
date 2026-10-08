@@ -1,4 +1,4 @@
-# Salon Inventory & Sales Platform — Case Study
+# Salon Inventory & Sales Platform: Case Study
 
 > An inventory, point-of-sale and reporting system for a hair straightening salon in Colombia, taken from zero software to a PWA plus native Android and iOS apps. Built solo as a freelance project.
 
@@ -9,7 +9,7 @@
 ![Capacitor](https://img.shields.io/badge/Capacitor-7-119EFF)
 ![Status](https://img.shields.io/badge/Status-In%20daily%20use-brightgreen)
 
-**Client:** Anyeli Sanguino, hair straightening salon (Colombia) — named with permission
+**Client:** Anyeli Sanguino, hair straightening salon (Colombia), named with permission
 **Landing:** [anyelisanguino.com](https://anyelisanguino.com)
 **Source code:** private (client-owned repository). This repo holds only the case study.
 
@@ -21,7 +21,7 @@ The salon ran without any software: no inventory count, no record of what each s
 
 It is in daily use at the salon, with 11 products in inventory and 10 sales bundles (combos) configured by the owner herself.
 
-The technical challenge was less about scale and more about **correctness of money and stock**: weighted-average costing, prices frozen at sale time, voids that return stock without corrupting cost, bundles that expand into components inside one transaction, and concurrent writers that must never deadlock or oversell — all on top of a mobile app shipped to both Android and iOS.
+The technical challenge was less about scale and more about **correctness of money and stock**: weighted-average costing, prices frozen at sale time, voids that return stock without corrupting cost, bundles that expand into components inside one transaction, and concurrent writers that must never deadlock or oversell. All of this on top of a mobile app shipped to both Android and iOS.
 
 | Point of sale | Cart review | Discount | Product edit |
 |---|---|---|---|
@@ -39,7 +39,7 @@ The owner is not technical and had never used business software, so requirements
 
 | Business question | Decision in the PRD |
 |---|---|
-| How is inventory valued? | **Weighted average cost**, recalculated on every stock entry (FIFO explicitly deferred — it would require a lots table). |
+| How is inventory valued? | **Weighted average cost**, recalculated on every stock entry (FIFO explicitly deferred, since it would require a lots table). |
 | How is money stored? | `Numeric(14,4)` in the database, displayed as whole Colombian pesos. Never floats. |
 | What is the truth for stock? | An **append-only movements ledger**. `productos.stock` is a denormalized cache updated in the same transaction and reconcilable against the ledger. |
 | Do price changes affect past sales? | No. Sale price and unit cost are **frozen on each sale line**. |
@@ -65,7 +65,7 @@ flowchart TB
         IOS["iOS app, unlisted<br/>(Capacitor 7)"]
     end
 
-    subgraph Backend["Backend — Railway"]
+    subgraph Backend["Backend (Railway)"]
         API["FastAPI web service<br/>routers → services → data"]
         CRON["Daily cron service<br/>low-stock digest"]
     end
@@ -93,7 +93,7 @@ Two environments (**develop** and **production**), each with its own Railway ser
 
 ### Backend layers
 
-A **pragmatic layered architecture**, not full Clean Architecture — a conscious choice for a single-business app maintained by one developer.
+A **pragmatic layered architecture**, not full Clean Architecture. A conscious choice for a single-business app maintained by one developer.
 
 | Layer | Directory | Responsibility |
 |---|---|---|
@@ -106,7 +106,7 @@ A **pragmatic layered architecture**, not full Clean Architecture — a consciou
 
 ---
 
-## Tech Stack — With Rationale
+## Tech Stack: With Rationale
 
 | Technology | Why |
 |---|---|
@@ -174,12 +174,12 @@ Each domain (data model, auth, products, inventory, sales, reports, combos, push
 
 ## Mobile: PWA → Android & iOS with Capacitor
 
-The app started as a PWA and was wrapped with Capacitor in three slices: (1) web shell — secure storage, service worker, icons; (2) native Android project, permissions, signing, tested on a real phone over USB; (3) native iOS project.
+The app started as a PWA and was wrapped with Capacitor in three slices: (1) web shell: secure storage, service worker, icons; (2) native Android project, permissions, signing, tested on a real phone over USB; (3) native iOS project.
 
 - **Android:** signed release build installed and tested on a real device; the hardware back button navigates instead of closing the app.
-- **iOS:** built with Xcode (on borrowed Macs, without owning one) and distributed as an **unlisted App Store app** — reachable only by direct link, not searchable.
-- **Push (FCM) on both platforms:** a real-time alert whenever any stock-decreasing operation (sale, internal consumption, negative adjustment, repackaging source) crosses a product's minimum — sent post-commit, best-effort, so an FCM failure never affects the operation — plus a daily digest from a Railway cron job listing products below minimum, ordered by urgency. Device tokens are upserted per device because FCM tokens rotate and a device can change user.
-- **App Review without exposing real data:** the app is single-tenant — products and inventory are global, so a reviewer account against production could alter real stock (and a void does not revert average cost). The demo account is routed to the **develop** backend at login; the routing only exists when the build defines the demo variables, and a unit test covers that no other user can be diverted.
+- **iOS:** built with Xcode (on borrowed Macs, without owning one) and distributed as an **unlisted App Store app**, reachable only by direct link, not searchable.
+- **Push (FCM) on both platforms:** a real-time alert whenever any stock-decreasing operation (sale, internal consumption, negative adjustment, repackaging source) crosses a product's minimum (sent post-commit, best-effort, so an FCM failure never affects the operation), plus a daily digest from a Railway cron job listing products below minimum, ordered by urgency. Device tokens are upserted per device because FCM tokens rotate and a device can change user.
+- **App Review without exposing real data:** the app is single-tenant: products and inventory are global, so a reviewer account against production could alter real stock (and a void does not revert average cost). The demo account is routed to the **develop** backend at login; the routing only exists when the build defines the demo variables, and a unit test covers that no other user can be diverted.
 - **Secure storage:** on native, the refresh token lives in encrypted secure storage, not plain preferences.
 
 ---
@@ -213,7 +213,7 @@ feature branch ──PR──► develop ──PR──► main
 | DNS / domains | Cloudflare, custom subdomains per environment |
 | Mobile builds | Built locally: Android Studio / Gradle for Android, Xcode for iOS |
 
-There is no public sign-up: users are created through a CLI command (`crear-usuario`) that reads the password from an interactive prompt or an environment variable — never a command-line flag, which would leak into shell history and process lists.
+There is no public sign-up: users are created through a CLI command (`crear-usuario`) that reads the password from an interactive prompt or an environment variable, never a command-line flag, which would leak into shell history and process lists.
 
 ---
 
@@ -223,11 +223,11 @@ There is no public sign-up: users are created through a CLI command (`crear-usua
 - **Uniform login failures:** unknown user, wrong password and inactive user are indistinguishable to the caller.
 - **Argon2** password hashing (`pwdlib`).
 - **Login rate limiting** per IP + username. Uvicorn is configured to honor `X-Forwarded-For` from Railway's edge; otherwise every client would share Railway's internal IP and anyone could lock out a known username.
-- **CORS without wildcards**, per environment, on both the API and the R2 buckets (they are configured separately — the upload goes browser → R2 directly).
+- **CORS without wildcards**, per environment, on both the API and the R2 buckets (they are configured separately; the upload goes browser → R2 directly).
 - **HTTP security headers** on every response (`X-Frame-Options: DENY`, HSTS, among others).
 - **Uploads:** presigned URLs with a signed content type and a 5 MB size limit.
 - **Fail-fast settings:** outside local/test, the app refuses to start with a weak or placeholder `SECRET_KEY`.
-- **Secrets only in environment variables** — the Firebase service account lives in Railway shared variables, never in the repo.
+- **Secrets only in environment variables:** the Firebase service account lives in Railway shared variables, never in the repo.
 
 ---
 
@@ -236,7 +236,7 @@ There is no public sign-up: users are created through a CLI command (`crear-usua
 ### Barcode scanner froze on real Android and iOS devices
 
 **Problem:** The camera opened for an instant and then stopped with "could not read the code."
-**Root cause:** Three compounding issues. (1) On mobile, `play()` resolves before video metadata, so ZXing sized its capture canvas at 0×0 and every frame threw. (2) Blurry frames raise `ChecksumException`/`FormatException`, which are normal while scanning, but only `NotFoundException` was being ignored. (3) The ignore list compared exception **names**, and the production build minified class names — `NotFoundException` became `t` — so it never matched.
+**Root cause:** Three compounding issues. (1) On mobile, `play()` resolves before video metadata, so ZXing sized its capture canvas at 0×0 and every frame threw. (2) Blurry frames raise `ChecksumException`/`FormatException`, which are normal while scanning, but only `NotFoundException` was being ignored. (3) The ignore list compared exception **names**, and the production build minified class names (`NotFoundException` became `t`), so it never matched.
 **Fix:** Open the stream ourselves with the rear camera and wait for `loadedmetadata`; treat all per-frame decode exceptions as non-fatal; compare with `instanceof` against the imported classes. Also request 1080p and continuous autofocus so small or curved barcodes (bottles) resolve. Confirmed by inspecting the real production bundle.
 
 ### The same product scanned as two different codes
@@ -254,7 +254,7 @@ There is no public sign-up: users are created through a CLI command (`crear-usua
 ### iOS push: devices registered, notifications never arrived
 
 **Problem:** Push worked on Android but not iOS.
-**Root cause:** `AppDelegate` lacked the remote-notification overrides that Capacitor documents but does not generate; and the push plugin returned a **raw APNs token** on iOS (only Android gets FCM tokens for free via Play Services), which the backend's FCM client rejected — silently, because only "invalid token" errors were logged.
+**Root cause:** `AppDelegate` lacked the remote-notification overrides that Capacitor documents but does not generate; and the push plugin returned a **raw APNs token** on iOS (only Android gets FCM tokens for free via Play Services), which the backend's FCM client rejected silently, because only "invalid token" errors were logged.
 **Fix:** Added the overrides, switched both platforms to `@capacitor-firebase/messaging` to obtain real FCM tokens, retried `getToken()` with short backoff for the asynchronous APNs registration, and logged every failed send. That logging is what exposed the last blocker: a new APNs key that simply needed time to propagate in Firebase.
 
 ### Discount and fan-out bugs in reports (caught before release)
@@ -274,7 +274,7 @@ Xcode 26 refused to build pods targeting iOS 14 (Capacitor's helper only raises 
 
 **Run migrations as part of the deploy.** Railway starts the API directly, and `alembic upgrade head` is a manual step after deploys that change the schema. It is documented, but it is exactly the kind of step that gets forgotten; a release command or pre-deploy hook should own it.
 
-**Move the login rate limiter out of process memory.** It is a deliberate shortcut — fine for a single Railway instance, but it resets on restart and would not be shared across replicas. A shared store (Redis or a Postgres table) is the upgrade path.
+**Move the login rate limiter out of process memory.** It is a deliberate shortcut: fine for a single Railway instance, but it resets on restart and would not be shared across replicas. A shared store (Redis or a Postgres table) is the upgrade path.
 
 **Ask "what can the App Store reviewer see?" before the first build, not at archive time.** The demo-account routing worked, but it was designed late. For any single-tenant app it belongs in the initial design.
 
